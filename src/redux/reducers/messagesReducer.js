@@ -1,5 +1,7 @@
 const initialState = {
-    messages: []
+    messages: [],
+    hasMoreMessages: true,
+    loadedMessagesCount: 0
 };
 
 const messagesReducer = (state = initialState, action) => {
@@ -8,6 +10,18 @@ const messagesReducer = (state = initialState, action) => {
             return {
                 ...state,
                 messages: [...state.messages, action.payload]
+            };
+        case 'LOAD_MESSAGES_BATCH':
+            return {
+                ...state,
+                messages: [...state.messages, ...action.payload.newMessages],
+                loadedMessagesCount: action.payload.loadedMessagesCount,
+                hasMoreMessages: true
+            };
+        case 'NO_MORE_MESSAGES':
+            return {
+                ...state,
+                hasMoreMessages: false
             };
         default:
             return state;
