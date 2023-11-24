@@ -6,6 +6,8 @@ import {
     InputGroup,
     FormControl,
     Button,
+    Modal,
+    Form,
 } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import InfiniteScroll from 'react-infinite-scroll-component'
@@ -13,23 +15,49 @@ import { addMessage, loadMessagesBatch } from './redux/actions/messageActions'
 
 const Chat = () => {
     const [newMessage, setNewMessage] = useState('')
-    const messages = useSelector(state => state.messages.messages);
-    const hasMoreMessages = useSelector(state => state.messages.hasMoreMessages);
+    const messages = useSelector((state) => state.messages.messages)
+    const hasMoreMessages = useSelector(
+        (state) => state.messages.hasMoreMessages
+    )
+    const [username, setUsername] = useState('')
+    const [inputModal, setInputModal] = useState('')
     const dispatch = useDispatch()
+
+    const broadcastChannel = new BroadcastChannel('chat_channel');
+
 
     const sendMessage = () => {
         if (newMessage.trim() !== '') {
-            dispatch(
-                addMessage({
-                    text: newMessage,
-                    name: 'User 1',
-                    imageUrl:
-                        'https://upload.wikimedia.org/wikipedia/commons/4/41/Profile-720.png',
-                })
-            )
-            setNewMessage('')
+            const messageData = {
+                text: newMessage,
+                name: username,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Profile-720.png',
+            };
+
+            dispatch(addMessage(messageData));
+            broadcastChannel.postMessage(messageData); 
+            setNewMessage('');
         }
     }
+    const handleSubmitUsername = (e) => {
+        e.preventDefault(); 
+        setUsername(inputModal);
+    }
+
+    useEffect(() => {
+        const handleMessages = (event) => {
+            dispatch(addMessage(event.data));
+        };
+
+        broadcastChannel.addEventListener('message', handleMessages);
+
+        // Cleanup the broadcast channel
+        return () => {
+            broadcastChannel.removeEventListener('message', handleMessages);
+            broadcastChannel.close();
+        };
+    }, [dispatch, broadcastChannel]);
+
     useEffect(() => {
         dispatch(loadMessagesBatch(25))
     }, [dispatch])
@@ -68,12 +96,12 @@ const Chat = () => {
                                 <div
                                     key={index}
                                     className={`d-flex mb-2 ${
-                                        message.name === 'User 1'
+                                        message.name === username
                                             ? 'justify-content-end'
                                             : 'justify-content-start'
                                     }`}
                                 >
-                                    {message.name !== 'User 1' && (
+                                    {message.name !== username && (
                                         <img
                                             src={message.imageUrl}
                                             alt="User"
@@ -102,7 +130,7 @@ const Chat = () => {
                                             {message.text}
                                         </div>
                                     </div>
-                                    {message.name === 'User 1' && (
+                                    {message.name === username && (
                                         <img
                                             src={message.imageUrl}
                                             alt="User"
@@ -146,6 +174,26 @@ const Chat = () => {
                     </InputGroup>
                 </Col>
             </Row>
+            <Modal show={username === ''}>
+                <Modal.Header>
+                    <Modal.Title>
+                        You need a name to enter this conversation
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleSubmitUsername}>
+                        <Form.Group>
+                            <Form.Label>Enter your name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="name..."
+                                value={inputModal}
+                                onChange={(e) => setInputModal(e.target.value)}
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+            </Modal>
         </Container>
     )
 }
