@@ -7,26 +7,25 @@ import {
     FormControl,
     Button,
 } from 'react-bootstrap'
-import {dummyMessages} from './dummyData' 
+import { useDispatch, useSelector } from 'react-redux';
+import { addMessage } from './redux/actions/messageActions';
+
 
 const Chat = () => {
-    const [messages, setMessages] = useState([...dummyMessages])
     const [newMessage, setNewMessage] = useState('')
+    const messages = useSelector(state => state.messages.messages);
+    const dispatch = useDispatch();
 
     const sendMessage = () => {
         if (newMessage.trim() !== '') {
-            setMessages([
-                ...messages,
-                {
-                    text: newMessage,
-                    name: 'User 1',
-                    imageUrl:
-                        'https://upload.wikimedia.org/wikipedia/commons/4/41/Profile-720.png',
-                },
-            ])
-            setNewMessage('')
+            dispatch(addMessage({
+                text: newMessage,
+                name: 'User 1',
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Profile-720.png',
+            }));
+            setNewMessage('');
         }
-    }
+    };
 
     return (
         <Container
